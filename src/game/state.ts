@@ -28,6 +28,8 @@ export interface GameState {
   bonusScore: number;
   /** Исход последней фигуры — для смайлика. */
   feedback: Feedback;
+  /** Счётчик показанных фигур — триггер перезапуска анимации смайлика. */
+  seq: number;
   roundTimeLeft: number;
   figureTimeLeft: number;
 }
@@ -40,6 +42,7 @@ export function initialState(): GameState {
     mainScore: 0,
     bonusScore: 0,
     feedback: "none",
+    seq: 0,
     roundTimeLeft: 0,
     figureTimeLeft: 0,
   };
@@ -50,6 +53,7 @@ function withNewFigure(state: GameState, feedback: Feedback): GameState {
     ...state,
     round: nextRound(state.round?.targetIndex),
     feedback,
+    seq: state.seq + 1,
     figureTimeLeft: FIGURE_TIME_MS,
   };
 }
@@ -87,9 +91,13 @@ export function tick(state: GameState, dtMs: number): GameState {
 
   if (s.roundTimeLeft <= 0) {
     s.roundTimeLeft = 0;
-    return s.phase === "main"
-      ? { ...s, phase: "result", mainScore: s.score }
-      : { ...s, phase: "gameover", bonusScore: s.score };
+    if (s.phase === "main") {
+      // Приз есть → промежуточный экран-ворота; иначе сразу финал.
+      return s.score >= PRIZE_THRESHOLD
+        ? { ...s, phase: "result", mainScore: s.score }
+        : { ...s, phase: "gameover", mainScore: s.score, bonusScore: 0 };
+    }
+    return { ...s, phase: "gameover", bonusScore: s.score };
   }
 
   if (s.figureTimeLeft <= 0) {
@@ -99,21 +107,21 @@ export function tick(state: GameState, dtMs: number): GameState {
   return s;
 }
 
-/** Переход после экрана результата: призовая игра или конец. */
+/**
+ * Переход с экрана result в призовую игру.
+ * result показывается только когда приз открыт, поэтому всегда → bonus.
+ */
 export function proceedFromResult(state: GameState): GameState {
   if (state.phase !== "result") return state;
-  if (state.mainScore >= PRIZE_THRESHOLD) {
-    return {
-      ...state,
-      phase: "bonus",
-      round: nextRound(),
-      score: 0,
-      feedback: "none",
-      roundTimeLeft: BONUS_TIME_MS,
-      figureTimeLeft: FIGURE_TIME_MS,
-    };
-  }
-  return { ...state, phase: "gameover", bonusScore: 0 };
+  return {
+    ...state,
+    phase: "bonus",
+    round: nextRound(),
+    score: 0,
+    feedback: "none",
+    roundTimeLeft: BONUS_TIME_MS,
+    figureTimeLeft: FIGURE_TIME_MS,
+  };
 }
 
 /**

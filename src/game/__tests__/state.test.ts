@@ -51,6 +51,14 @@ describe("answer", () => {
     const s = initialState();
     expect(answer(s, 1)).toBe(s);
   });
+
+  it("инкрементирует seq на каждый ответ (триггер анимации смайлика)", () => {
+    const s = mainStateWithRound(3);
+    const a = answer(s, s.round!.answer);
+    expect(a.seq).toBe(s.seq + 1);
+    const b = answer(a, a.round!.screen); // ошибка
+    expect(b.seq).toBe(a.seq + 1);
+  });
 });
 
 describe("tick", () => {
@@ -69,11 +77,18 @@ describe("tick", () => {
     expect(next.phase).toBe("main");
   });
 
-  it("конец основного раунда → result с mainScore", () => {
+  it("конец основного раунда: < порога → сразу gameover с mainScore", () => {
     const s: GameState = { ...startMain(), score: 7 };
     const next = tick(s, ROUND_TIME_MS);
-    expect(next.phase).toBe("result");
+    expect(next.phase).toBe("gameover");
     expect(next.mainScore).toBe(7);
+  });
+
+  it("конец основного раунда: ≥ порога → result с mainScore", () => {
+    const s: GameState = { ...startMain(), score: PRIZE_THRESHOLD };
+    const next = tick(s, ROUND_TIME_MS);
+    expect(next.phase).toBe("result");
+    expect(next.mainScore).toBe(PRIZE_THRESHOLD);
   });
 
   it("конец призового раунда → gameover с bonusScore", () => {
@@ -90,7 +105,7 @@ describe("tick", () => {
 });
 
 describe("proceedFromResult", () => {
-  it("≥ порога → призовая игра", () => {
+  it("result → призовая игра (result показывается только при открытом призе)", () => {
     const s: GameState = {
       ...initialState(),
       phase: "result",
@@ -102,13 +117,9 @@ describe("proceedFromResult", () => {
     expect(next.roundTimeLeft).toBe(BONUS_TIME_MS);
   });
 
-  it("< порога → конец игры", () => {
-    const s: GameState = {
-      ...initialState(),
-      phase: "result",
-      mainScore: PRIZE_THRESHOLD - 1,
-    };
-    expect(proceedFromResult(s).phase).toBe("gameover");
+  it("игнорируется вне фазы result", () => {
+    const s = startMain();
+    expect(proceedFromResult(s)).toBe(s);
   });
 });
 

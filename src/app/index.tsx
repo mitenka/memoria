@@ -8,7 +8,6 @@ import { rows } from "@/game/catalog";
 import {
   FIGURE_TIME_MS,
   FIGURE_TIMER_DOTS,
-  PRIZE_THRESHOLD,
   ROUND_TIME_MS,
 } from "@/game/config";
 import { type Figure } from "@/game/figures";
@@ -16,7 +15,7 @@ import { hintRow } from "@/game/state";
 import { useGame } from "@/game/useGame";
 
 const BUTTON_SIZE = 38;
-const SCREEN_FIGURE_SIZE = 140;
+const SCREEN_FIGURE_SIZE = 172;
 
 function formatTime(ms: number): string {
   const total = Math.max(0, Math.ceil(ms / 1000));
@@ -26,7 +25,7 @@ function formatTime(ms: number): string {
 }
 
 export default function GameScreen() {
-  const { state, start, press, proceed } = useGame();
+  const { state, best, newRecord, start, press, proceed } = useGame();
   const { phase } = state;
   const playing = phase === "main" || phase === "bonus";
   const hint = hintRow(state);
@@ -40,13 +39,22 @@ export default function GameScreen() {
         {/* Экран автомата */}
         <View style={styles.screen}>
           {playing && state.round ? (
-            <FigureView
-              figure={state.round.screen}
-              size={SCREEN_FIGURE_SIZE}
-              color="#208AEF"
-            />
+            <View style={styles.playArea}>
+              <FigureView
+                figure={state.round.screen}
+                size={SCREEN_FIGURE_SIZE}
+                color="#208AEF"
+              />
+              <Smiley mood={state.feedback} seq={state.seq} size={72} />
+            </View>
           ) : (
-            <ScreenMenu state={state} onStart={start} onProceed={proceed} />
+            <ScreenMenu
+              state={state}
+              best={best}
+              newRecord={newRecord}
+              onStart={start}
+              onProceed={proceed}
+            />
           )}
         </View>
 
@@ -79,17 +87,20 @@ function Hud({
         <Text style={styles.hudValue}>{formatTime(timeLeft)}</Text>
       </View>
       <FigureTimer remaining={figureRatio} count={FIGURE_TIMER_DOTS} />
-      <Smiley mood={state.feedback} size={44} />
     </View>
   );
 }
 
 function ScreenMenu({
   state,
+  best,
+  newRecord,
   onStart,
   onProceed,
 }: {
   state: ReturnType<typeof useGame>["state"];
+  best: ReturnType<typeof useGame>["best"];
+  newRecord: ReturnType<typeof useGame>["newRecord"];
   onStart: () => void;
   onProceed: () => void;
 }) {
@@ -99,12 +110,9 @@ function ScreenMenu({
   let onAction: () => void;
 
   if (state.phase === "result") {
-    const prize = state.mainScore >= PRIZE_THRESHOLD;
     title = "Раунд окончен";
-    subtitle = prize
-      ? `${state.mainScore} очков — открыта призовая игра!`
-      : `${state.mainScore} очков (нужно ${PRIZE_THRESHOLD} для приза)`;
-    label = prize ? "Призовая игра" : "Завершить";
+    subtitle = `${state.mainScore} очков — открыта призовая игра!`;
+    label = "Призовая игра";
     onAction = onProceed;
   } else if (state.phase === "gameover") {
     title = "Игра окончена";
@@ -120,10 +128,21 @@ function ScreenMenu({
     onAction = onStart;
   }
 
+  const showRecord = state.phase === "idle" || state.phase === "gameover";
+  const isNew =
+    (state.phase === "result" && newRecord.main) ||
+    (state.phase === "gameover" && (newRecord.main || newRecord.bonus));
+
   return (
     <View style={styles.menu}>
       <Text style={styles.menuTitle}>{title}</Text>
       <Text style={styles.menuSubtitle}>{subtitle}</Text>
+      {isNew && <Text style={styles.menuRecordHi}>★ Новый рекорд!</Text>}
+      {showRecord && (
+        <Text style={styles.menuRecord}>
+          Рекорд · основной {best.main} · призовой {best.bonus}
+        </Text>
+      )}
       <Pressable style={styles.cta} onPress={onAction}>
         <Text style={styles.ctaText}>{label}</Text>
       </Pressable>
@@ -249,6 +268,23 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#5A6B7B",
     textAlign: "center",
+  },
+  menuRecord: {
+    fontSize: 13,
+    color: "#7A8B9B",
+    textAlign: "center",
+  },
+  menuRecordHi: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#E0A106",
+    textAlign: "center",
+  },
+  playArea: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 16,
   },
   cta: {
     marginTop: 16,

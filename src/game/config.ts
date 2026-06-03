@@ -7,7 +7,7 @@ export const ROUND_TIME_MS = 120_000;
 export const BONUS_TIME_MS = 120_000;
 
 /** Время на одну фигуру, мс. Не успел — засчитывается как промах. */
-export const FIGURE_TIME_MS = 4_000;
+export const FIGURE_TIME_MS = 6_000;
 
 /** Порог очков за основной раунд для открытия призовой игры */
 export const PRIZE_THRESHOLD = 20;
