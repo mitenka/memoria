@@ -9,6 +9,7 @@ import {
   FIGURE_TIME_MS,
   FIGURE_TIMER_DOTS,
   PRIZE_THRESHOLD,
+  ROUND_TIME_MS,
 } from "@/game/config";
 import { type Figure } from "@/game/figures";
 import { hintRow } from "@/game/state";
@@ -27,132 +28,141 @@ function formatTime(ms: number): string {
 export default function GameScreen() {
   const { state, start, press, proceed } = useGame();
   const { phase } = state;
+  const playing = phase === "main" || phase === "bonus";
+  const hint = hintRow(state);
 
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        {phase === "idle" && (
-          <Overlay
-            title="ПАМЯТЬ"
-            subtitle="Дополни фигуру недостающей частью"
-            actionLabel="Играть"
-            onAction={start}
-          />
-        )}
+        {/* HUD автомата */}
+        <Hud state={state} playing={playing} />
 
-        {phase === "result" && (
-          <Overlay
-            title="Раунд окончен"
-            subtitle={
-              state.mainScore >= PRIZE_THRESHOLD
-                ? `${state.mainScore} очков — открыта призовая игра!`
-                : `${state.mainScore} очков (нужно ${PRIZE_THRESHOLD} для приза)`
-            }
-            actionLabel={
-              state.mainScore >= PRIZE_THRESHOLD ? "Призовая игра" : "Завершить"
-            }
-            onAction={proceed}
-          />
-        )}
+        {/* Экран автомата */}
+        <View style={styles.screen}>
+          {playing && state.round ? (
+            <FigureView
+              figure={state.round.screen}
+              size={SCREEN_FIGURE_SIZE}
+              color="#208AEF"
+            />
+          ) : (
+            <ScreenMenu state={state} onStart={start} onProceed={proceed} />
+          )}
+        </View>
 
-        {phase === "gameover" && (
-          <Overlay
-            title="Игра окончена"
-            subtitle={`Основной: ${state.mainScore}${
-              state.bonusScore > 0 ? `   •   Призовой: ${state.bonusScore}` : ""
-            }`}
-            actionLabel="Играть снова"
-            onAction={start}
-          />
-        )}
-
-        {(phase === "main" || phase === "bonus") && state.round && (
-          <PlayView state={state} press={press} />
-        )}
+        {/* Клавиатура автомата */}
+        <Keyboard playing={playing} hint={hint} onPress={press} />
       </SafeAreaView>
     </View>
   );
 }
 
-function PlayView({
+function Hud({
   state,
-  press,
+  playing,
 }: {
   state: ReturnType<typeof useGame>["state"];
-  press: (f: Figure) => void;
+  playing: boolean;
 }) {
-  const hint = hintRow(state);
   const isBonus = state.phase === "bonus";
+  const timeLeft = playing ? state.roundTimeLeft : ROUND_TIME_MS;
+  const figureRatio = playing ? state.figureTimeLeft / FIGURE_TIME_MS : 1;
 
   return (
-    <>
-      {/* HUD */}
-      <View style={styles.hud}>
-        <View style={styles.hudCell}>
-          <Text style={styles.hudLabel}>Очки</Text>
-          <Text style={styles.hudValue}>{state.score}</Text>
-        </View>
-        <View style={styles.hudCell}>
-          <Text style={styles.hudLabel}>{isBonus ? "ПРИЗ" : "Время"}</Text>
-          <Text style={styles.hudValue}>{formatTime(state.roundTimeLeft)}</Text>
-        </View>
-        <FigureTimer
-          remaining={state.figureTimeLeft / FIGURE_TIME_MS}
-          count={FIGURE_TIMER_DOTS}
-        />
-        <Smiley mood={state.feedback} size={44} />
+    <View style={styles.hud}>
+      <View style={styles.hudCell}>
+        <Text style={styles.hudLabel}>Очки</Text>
+        <Text style={styles.hudValue}>{state.score}</Text>
       </View>
-
-      {/* Экран с недостающей фигурой */}
-      <View style={styles.screen}>
-        <FigureView
-          figure={state.round!.screen}
-          size={SCREEN_FIGURE_SIZE}
-          color="#208AEF"
-        />
+      <View style={styles.hudCell}>
+        <Text style={styles.hudLabel}>{isBonus ? "ПРИЗ" : "Время"}</Text>
+        <Text style={styles.hudValue}>{formatTime(timeLeft)}</Text>
       </View>
-
-      {/* 4 ряда × 8 кнопок */}
-      <View style={styles.keyboard}>
-        {rows.map((rowFigures, row) => {
-          const highlighted = hint === row;
-          return (
-            <View key={row} style={[styles.row, highlighted && styles.rowHint]}>
-              {rowFigures.map((figure, col) => (
-                <Pressable
-                  key={col}
-                  style={styles.button}
-                  onPress={() => press(figure)}
-                >
-                  <FigureView figure={figure} size={BUTTON_SIZE} color="#333" />
-                </Pressable>
-              ))}
-            </View>
-          );
-        })}
-      </View>
-    </>
+      <FigureTimer remaining={figureRatio} count={FIGURE_TIMER_DOTS} />
+      <Smiley mood={state.feedback} size={44} />
+    </View>
   );
 }
 
-function Overlay({
-  title,
-  subtitle,
-  actionLabel,
-  onAction,
+function ScreenMenu({
+  state,
+  onStart,
+  onProceed,
 }: {
-  title: string;
-  subtitle: string;
-  actionLabel: string;
-  onAction: () => void;
+  state: ReturnType<typeof useGame>["state"];
+  onStart: () => void;
+  onProceed: () => void;
+}) {
+  let title: string;
+  let subtitle: string;
+  let label: string;
+  let onAction: () => void;
+
+  if (state.phase === "result") {
+    const prize = state.mainScore >= PRIZE_THRESHOLD;
+    title = "Раунд окончен";
+    subtitle = prize
+      ? `${state.mainScore} очков — открыта призовая игра!`
+      : `${state.mainScore} очков (нужно ${PRIZE_THRESHOLD} для приза)`;
+    label = prize ? "Призовая игра" : "Завершить";
+    onAction = onProceed;
+  } else if (state.phase === "gameover") {
+    title = "Игра окончена";
+    subtitle = `Основной: ${state.mainScore}${
+      state.bonusScore > 0 ? `   •   Призовой: ${state.bonusScore}` : ""
+    }`;
+    label = "Играть снова";
+    onAction = onStart;
+  } else {
+    title = "ПАМЯТЬ";
+    subtitle = "Дополни фигуру недостающей частью";
+    label = "Играть";
+    onAction = onStart;
+  }
+
+  return (
+    <View style={styles.menu}>
+      <Text style={styles.menuTitle}>{title}</Text>
+      <Text style={styles.menuSubtitle}>{subtitle}</Text>
+      <Pressable style={styles.cta} onPress={onAction}>
+        <Text style={styles.ctaText}>{label}</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+function Keyboard({
+  playing,
+  hint,
+  onPress,
+}: {
+  playing: boolean;
+  hint: number | null;
+  onPress: (f: Figure) => void;
 }) {
   return (
-    <View style={styles.overlay}>
-      <Text style={styles.overlayTitle}>{title}</Text>
-      <Text style={styles.overlaySubtitle}>{subtitle}</Text>
-      <Pressable style={styles.cta} onPress={onAction}>
-        <Text style={styles.ctaText}>{actionLabel}</Text>
-      </Pressable>
+    <View style={styles.keyboard}>
+      {rows.map((rowFigures, row) => {
+        const highlighted = playing && hint === row;
+        return (
+          <View key={row} style={[styles.row, highlighted && styles.rowHint]}>
+            {rowFigures.map((figure, col) => (
+              <Pressable
+                key={col}
+                style={[styles.button, !playing && styles.buttonIdle]}
+                disabled={!playing}
+                onPress={() => onPress(figure)}
+              >
+                <FigureView
+                  figure={figure}
+                  size={BUTTON_SIZE}
+                  color={playing ? "#333" : "#bbb"}
+                />
+              </Pressable>
+            ))}
+          </View>
+        );
+      })}
     </View>
   );
 }
@@ -191,8 +201,15 @@ const styles = StyleSheet.create({
   },
   screen: {
     flex: 1,
+    alignSelf: "stretch",
+    marginHorizontal: 16,
+    marginVertical: 12,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: "#F4F8FC",
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: "#D0DCE8",
   },
   keyboard: {
     gap: 8,
@@ -212,22 +229,25 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     backgroundColor: "#f0f0f0",
   },
-  overlay: {
-    flex: 1,
+  buttonIdle: {
+    backgroundColor: "#f6f6f6",
+    opacity: 0.6,
+  },
+  menu: {
     alignItems: "center",
     justifyContent: "center",
-    gap: 12,
+    gap: 10,
     paddingHorizontal: 24,
   },
-  overlayTitle: {
-    fontSize: 34,
+  menuTitle: {
+    fontSize: 30,
     fontWeight: "800",
     letterSpacing: 2,
-    color: "#000",
+    color: "#0B3D66",
   },
-  overlaySubtitle: {
-    fontSize: 15,
-    color: "#60646C",
+  menuSubtitle: {
+    fontSize: 14,
+    color: "#5A6B7B",
     textAlign: "center",
   },
   cta: {
