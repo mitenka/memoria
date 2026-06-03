@@ -82,11 +82,11 @@ function Hud({
         <Text style={styles.hudLabel}>Очки</Text>
         <Text style={styles.hudValue}>{state.score}</Text>
       </View>
-      <View style={styles.hudCell}>
+      <FigureTimer remaining={figureRatio} count={FIGURE_TIMER_DOTS} />
+      <View style={styles.hudCellRight}>
         <Text style={styles.hudLabel}>{isBonus ? "ПРИЗ" : "Время"}</Text>
         <Text style={styles.hudValue}>{formatTime(timeLeft)}</Text>
       </View>
-      <FigureTimer remaining={figureRatio} count={FIGURE_TIMER_DOTS} />
     </View>
   );
 }
@@ -164,11 +164,16 @@ function Keyboard({
       {rows.map((rowFigures, row) => {
         const highlighted = playing && hint === row;
         return (
-          <View key={row} style={[styles.row, highlighted && styles.rowHint]}>
+          <View key={row} style={styles.row}>
             {rowFigures.map((figure, col) => (
               <Pressable
                 key={col}
-                style={[styles.button, !playing && styles.buttonIdle]}
+                style={({ pressed }) => [
+                  styles.button,
+                  !playing && styles.buttonIdle,
+                  highlighted && styles.buttonHint,
+                  pressed && playing && styles.buttonPressed,
+                ]}
                 disabled={!playing}
                 onPress={() => onPress(figure)}
               >
@@ -193,6 +198,9 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
+    width: "100%",
+    maxWidth: 480,
+    alignSelf: "center",
     alignItems: "center",
     justifyContent: "space-between",
     paddingVertical: 24,
@@ -205,12 +213,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   hudCell: {
-    alignItems: "center",
+    alignItems: "flex-start",
+  },
+  hudCellRight: {
+    alignItems: "flex-end",
   },
   hudLabel: {
     fontSize: 11,
-    color: "#60646C",
-    letterSpacing: 1,
+    color: "#8A909A",
+    letterSpacing: 1.5,
+    textTransform: "uppercase",
   },
   hudValue: {
     fontSize: 22,
@@ -226,9 +238,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#F4F8FC",
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: "#D0DCE8",
+    borderRadius: 24,
   },
   keyboard: {
     alignSelf: "stretch",
@@ -237,15 +247,8 @@ const styles = StyleSheet.create({
   },
   row: {
     flexDirection: "row",
-    gap: 4,
-    paddingVertical: 4,
-    paddingHorizontal: 4,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: "transparent",
-  },
-  rowHint: {
-    borderColor: "#208AEF",
+    gap: 6,
+    paddingVertical: 3,
   },
   button: {
     flex: 1,
@@ -253,9 +256,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#FFFFFF",
-    borderRadius: 9,
-    borderWidth: 1,
+    borderRadius: 12,
+    borderWidth: 1.5,
     borderColor: "#D7DEE7",
+  },
+  buttonHint: {
+    borderColor: "#208AEF",
+  },
+  buttonPressed: {
+    transform: [{ scale: 0.92 }],
+    opacity: 0.85,
   },
   buttonIdle: {
     backgroundColor: "#F3F6FA",
