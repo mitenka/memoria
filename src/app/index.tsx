@@ -14,7 +14,7 @@ import { type Figure } from "@/game/figures";
 import { hintRow } from "@/game/state";
 import { useGame } from "@/game/useGame";
 
-const BUTTON_SIZE = 36;
+const BUTTON_SIZE = 30;
 const SCREEN_FIGURE_SIZE = 172;
 
 function formatTime(ms: number): string {
@@ -79,12 +79,12 @@ function Hud({
   return (
     <View style={styles.hud}>
       <View style={styles.hudCell}>
-        <Text style={styles.hudLabel}>Очки</Text>
+        <Text style={styles.hudLabel}>Score</Text>
         <Text style={styles.hudValue}>{state.score}</Text>
       </View>
       <FigureTimer remaining={figureRatio} count={FIGURE_TIMER_DOTS} />
       <View style={styles.hudCellRight}>
-        <Text style={styles.hudLabel}>{isBonus ? "ПРИЗ" : "Время"}</Text>
+        <Text style={styles.hudLabel}>{isBonus ? "Prize" : "Time"}</Text>
         <Text style={styles.hudValue}>{formatTime(timeLeft)}</Text>
       </View>
     </View>
@@ -110,21 +110,21 @@ function ScreenMenu({
   let onAction: () => void;
 
   if (state.phase === "result") {
-    title = "Раунд окончен";
-    subtitle = `${state.mainScore} очков — открыта призовая игра!`;
-    label = "Призовая игра";
+    title = "Round complete";
+    subtitle = `${state.mainScore} points — prize round unlocked!`;
+    label = "Prize round";
     onAction = onProceed;
   } else if (state.phase === "gameover") {
-    title = "Игра окончена";
-    subtitle = `Основной: ${state.mainScore}${
-      state.bonusScore > 0 ? `   •   Призовой: ${state.bonusScore}` : ""
+    title = "Game over";
+    subtitle = `Main: ${state.mainScore}${
+      state.bonusScore > 0 ? `   •   Prize: ${state.bonusScore}` : ""
     }`;
-    label = "Играть снова";
+    label = "Play again";
     onAction = onStart;
   } else {
-    title = "ПАМЯТЬ";
-    subtitle = "Дополни фигуру недостающей частью";
-    label = "Играть";
+    title = "MEMORY";
+    subtitle = "Complete the figure with the missing piece";
+    label = "Play";
     onAction = onStart;
   }
 
@@ -137,10 +137,10 @@ function ScreenMenu({
     <View style={styles.menu}>
       <Text style={styles.menuTitle}>{title}</Text>
       <Text style={styles.menuSubtitle}>{subtitle}</Text>
-      {isNew && <Text style={styles.menuRecordHi}>★ Новый рекорд!</Text>}
+      {isNew && <Text style={styles.menuRecordHi}>★ New record!</Text>}
       {showRecord && (
         <Text style={styles.menuRecord}>
-          Рекорд · основной {best.main} · призовой {best.bonus}
+          Best · main {best.main} · prize {best.bonus}
         </Text>
       )}
       <Pressable style={styles.cta} onPress={onAction}>

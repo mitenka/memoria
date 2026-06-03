@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { type Figure } from "./figures";
+import { resultHaptic, tapHaptic } from "./haptics";
 import {
   type HighScores,
   loadHighScores,
@@ -77,11 +78,19 @@ export function useGame() {
     }
   }, [state.phase]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Тактильный отклик на исход ответа (success/fail) при каждой смене фигуры.
+  useEffect(() => {
+    if (!running) return;
+    if (state.feedback === "success") resultHaptic(true);
+    else if (state.feedback === "fail") resultHaptic(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.seq]);
+
   const start = useCallback(() => setState(startMain()), []);
-  const press = useCallback(
-    (f: Figure) => setState((s) => applyAnswer(s, f)),
-    [],
-  );
+  const press = useCallback((f: Figure) => {
+    tapHaptic();
+    setState((s) => applyAnswer(s, f));
+  }, []);
   const proceed = useCallback(() => setState((s) => proceedFromResult(s)), []);
   const reset = useCallback(() => setState(initialState()), []);
 
