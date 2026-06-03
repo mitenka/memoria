@@ -14,7 +14,7 @@ import { type Figure } from "@/game/figures";
 import { hintRow } from "@/game/state";
 import { useGame } from "@/game/useGame";
 
-const BUTTON_SIZE = 38;
+const BUTTON_SIZE = 36;
 const SCREEN_FIGURE_SIZE = 172;
 
 function formatTime(ms: number): string {
@@ -231,25 +231,35 @@ const styles = StyleSheet.create({
     borderColor: "#D0DCE8",
   },
   keyboard: {
+    alignSelf: "stretch",
     gap: 8,
-    paddingHorizontal: 8,
+    paddingHorizontal: 16,
   },
   row: {
     flexDirection: "row",
     gap: 4,
-    padding: 4,
-    borderRadius: 10,
+    paddingVertical: 4,
+    paddingHorizontal: 4,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: "transparent",
   },
   rowHint: {
-    backgroundColor: "#DCEBFF",
+    borderColor: "#208AEF",
   },
   button: {
-    padding: 4,
-    borderRadius: 6,
-    backgroundColor: "#f0f0f0",
+    flex: 1,
+    aspectRatio: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 9,
+    borderWidth: 1,
+    borderColor: "#D7DEE7",
   },
   buttonIdle: {
-    backgroundColor: "#f6f6f6",
+    backgroundColor: "#F3F6FA",
+    borderColor: "#E4E9EF",
     opacity: 0.6,
   },
   menu: {
@@ -281,10 +291,11 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   playArea: {
+    width: "100%",
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    gap: 16,
+    justifyContent: "space-between",
+    paddingHorizontal: 28,
   },
   cta: {
     marginTop: 16,

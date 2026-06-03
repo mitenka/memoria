@@ -16,7 +16,7 @@ interface Props {
 const GRID = 9;
 const CELL = 9;
 const DOT = 7;
-const HOLD_MS = 500; // показываем смайлик целиком перед осыпанием
+const HOLD_MS = 850; // показываем смайлик целиком перед осыпанием
 const FADE_MS = 950;
 
 const EYES: [number, number][] = [
