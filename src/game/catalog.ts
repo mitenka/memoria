@@ -83,8 +83,15 @@ const row4: Figure[] = [
 
 export const rows: Figure[][] = [row1, row2, row3, row4];
 
+export const COLS = row1.length; // 8 кнопок в ряду
+
 export const allFigures: Figure[] = [...row1, ...row2, ...row3, ...row4];
 
 export function figureAt(row: number, col: number): Figure {
   return rows[row][col];
+}
+
+/** Номер ряда (0..3) для плоского индекса в allFigures. */
+export function rowOf(index: number): number {
+  return Math.floor(index / COLS);
 }
