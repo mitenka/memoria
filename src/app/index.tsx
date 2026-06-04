@@ -16,7 +16,7 @@ import { type Figure } from "@/game/figures";
 import { hintRow } from "@/game/state";
 import { useGame } from "@/game/useGame";
 
-const BUTTON_SIZE = 30;
+const BUTTON_SIZE = 36;
 const SCREEN_FIGURE_SIZE = 172;
 
 function formatTime(ms: number): string {
@@ -263,17 +263,17 @@ const styles = StyleSheet.create({
   },
   keyboard: {
     alignSelf: "stretch",
-    gap: 8,
-    paddingHorizontal: 16,
+    gap: 6,
+    paddingHorizontal: 12,
   },
   row: {
     flexDirection: "row",
-    gap: 6,
-    paddingVertical: 3,
+    gap: 4,
+    paddingVertical: 2,
   },
   button: {
     flex: 1,
-    aspectRatio: 1,
+    height: 54,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#FFFFFF",
