@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import FigureTimer from "@/components/FigureTimer";
 import FigureView from "@/components/FigureView";
+import RulesModal from "@/components/RulesModal";
 import Smiley from "@/components/Smiley";
 import { rows } from "@/game/catalog";
 import {
@@ -29,6 +31,7 @@ export default function GameScreen() {
   const { phase } = state;
   const playing = phase === "main" || phase === "bonus";
   const hint = hintRow(state);
+  const [rulesVisible, setRulesVisible] = useState(false);
 
   return (
     <View style={styles.container}>
@@ -54,6 +57,7 @@ export default function GameScreen() {
               newRecord={newRecord}
               onStart={start}
               onProceed={proceed}
+              onShowRules={() => setRulesVisible(true)}
             />
           )}
         </View>
@@ -61,6 +65,11 @@ export default function GameScreen() {
         {/* Клавиатура автомата */}
         <Keyboard playing={playing} hint={hint} onPress={press} />
       </SafeAreaView>
+
+      <RulesModal
+        visible={rulesVisible}
+        onClose={() => setRulesVisible(false)}
+      />
     </View>
   );
 }
@@ -97,12 +106,14 @@ function ScreenMenu({
   newRecord,
   onStart,
   onProceed,
+  onShowRules,
 }: {
   state: ReturnType<typeof useGame>["state"];
   best: ReturnType<typeof useGame>["best"];
   newRecord: ReturnType<typeof useGame>["newRecord"];
   onStart: () => void;
   onProceed: () => void;
+  onShowRules: () => void;
 }) {
   let title: string;
   let subtitle: string;
@@ -145,6 +156,16 @@ function ScreenMenu({
       )}
       <Pressable style={styles.cta} onPress={onAction}>
         <Text style={styles.ctaText}>{label}</Text>
+      </Pressable>
+      <Pressable
+        style={({ pressed }) => [
+          styles.rulesLink,
+          pressed && styles.rulesLinkPressed,
+        ]}
+        hitSlop={8}
+        onPress={onShowRules}
+      >
+        <Text style={styles.rulesLinkText}>How to play</Text>
       </Pressable>
     </View>
   );
@@ -306,6 +327,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 28,
+  },
+  rulesLink: {
+    marginTop: 4,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
+  rulesLinkPressed: {
+    opacity: 0.5,
+  },
+  rulesLinkText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#208AEF",
   },
   cta: {
     marginTop: 16,
